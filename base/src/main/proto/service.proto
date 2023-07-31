@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+option java_generic_services = true;
+option java_multiple_files = true;
+option java_package = "org.catmq.protocol.service";
+option java_generate_equals_and_hash = true;
+option java_string_check_utf8 = true;
+import "definition.proto";
+
+// Producer发给Broker，请求向Broker发送消息
+message SendMessage2BrokerRequest {
+  repeated OriginMessage message = 1;
+  int64 producerId = 2;
+  string topic = 3;
+}
+
+// Broker发给Producer，是对"Producer发送消息"请求的回应
+message SendMessage2BrokerResponse {
+  int64 segmentId = 1;
+  int64 firstEntryId = 2;
+  int64 lastEntryId = 3;
+  bool ack = 4;
+  string res = 5;
+  Status status = 6;
+}
+
+// Consumer发给Broker，从Broker接收消息的请求
+message GetMessageFromBrokerRequest {
+  string topic = 1;
+  string subscription = 2;
+  int64 consumerId = 3;
+  int32 batchNumber = 4;
+  int64 timeoutInMs = 5;
+}
+
+// Broker发给Consumer，作为对"请求从Broker接收消息"的回复
+message GetMessageFromBrokerResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+  repeated NumberedMessage message = 4;
+}
+
+// 从持久化区域(硬盘)获取消息的请求
+message GetMessageFromStorerRequest {
+  int64 segment_id = 2;
+  int64 entry_id = 3;
+}
+
+// 对"从持久化区域获取消息"请求的响应
+message GetMessageFromStorerResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+  repeated NumberedMessage message = 4;
+}
+
+// 请求进行持久化
+message SendMessage2StorerRequest {
+  repeated NumberedMessage message = 1;
+  string mode = 2;
+}
+
+// 响应"进行持久化"请求
+message SendMessage2StorerResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
+// Producer发给Broker，请求创建topic
+message CreateTopicRequest {
+  string topic = 1;
+  int64 producerId = 2;
+}
+
+// Broker发给Producer，对创建topic请求的响应
+message CreateTopicResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
+// 创建分区的请求
+message CreatePartitionRequest {
+  string topic = 1;
+  int32 partitionIndex = 2;
+  string topicType = 3;
+  string topicMode = 4;
+}
+
+// 对"创建分区"的响应
+message CreatePartitionResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
+// 创建分片的请求
+message CreateSegmentRequest {
+  int64 segmentId = 1;
+}
+
+// 响应"创建分片"
+message CreateSegmentResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
+// Consumer发给Broker，请求订阅某topic
+message SubscribeRequest {
+  string topic = 1;
+  string subscription = 2;
+  int64 consumerId = 3;
+}
+
+// Broker发给Consumer，对Consumer订阅请求的响应
+message SubscribeResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
+// Broker RPC服务定义
+service BrokerService{
+  rpc SendMessage2Broker (SendMessage2BrokerRequest) returns (SendMessage2BrokerResponse) {}
+  rpc GetMessageFromBroker (GetMessageFromBrokerRequest) returns (GetMessageFromBrokerResponse) {}
+  rpc CreateTopic (CreateTopicRequest) returns (CreateTopicResponse) {}
+  rpc CreatePartition (CreatePartitionRequest) returns (CreatePartitionResponse) {}
+  rpc Subscribe (SubscribeRequest) returns (SubscribeResponse) {}
+}
+
+// 持久化模块Storer RPC服务定义
+service StorerService{
+  rpc SendMessage2Storer (SendMessage2StorerRequest) returns (SendMessage2StorerResponse) {}
+  rpc CreateSegment (CreateSegmentRequest) returns (CreateSegmentResponse) {}
+  rpc GetMessageFromStorer (GetMessageFromStorerRequest) returns (GetMessageFromStorerResponse) {}
+}

@@ -1,0 +1,51 @@
+package org.catmq.storer;
+
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.curator.framework.CuratorFramework;
+import org.catmq.entity.StorerInfo;
+import org.catmq.storage.messageLog.FlushMessageEntryService;
+import org.catmq.storage.messageLog.MessageLogStorage;
+import org.catmq.storage.segment.SegmentFileManager;
+import org.catmq.storage.segment.SegmentStorage;
+import org.catmq.zk.StorerZkManager;
+import org.catmq.zk.ZkUtil;
+
+/**
+ * 存储模块
+ */
+@Slf4j
+@Getter
+public class Storer {
+    /**
+     * 使用静态代码块初始化，类加载时即存在，
+     */
+    public static final Storer STORER;
+
+    static {
+        STORER = new Storer();
+    }
+
+    private Storer() {
+    }
+
+    public void init() {
+        storerInfo = new StorerInfo();
+        client = ZkUtil.createClient(storerInfo.getZkAddress());
+        storerZkManager = StorerZkManager.StorerZkManagerEnum.INSTANCE.getInstance();
+        storerZkManager.register2Zk();
+        messageLogStorage = MessageLogStorage.MessageLogStorageEnum.INSTANCE.getInstance();
+        segmentStorage = SegmentStorage.SegmentStorageEnum.INSTANCE.getInstance();
+        flushMessageEntryService = FlushMessageEntryService.FlushMessageEntryServiceEnum.INSTANCE.getInstance();
+        flushMessageEntryService.start();
+        segmentFileManager = SegmentFileManager.SegmentFileServiceEnum.INSTANCE.getInstance();
+    }
+
+    private StorerInfo storerInfo;
+    private CuratorFramework client;
+    private StorerZkManager storerZkManager;
+    public MessageLogStorage messageLogStorage;
+    public SegmentStorage segmentStorage;
+    public FlushMessageEntryService flushMessageEntryService;
+    private SegmentFileManager segmentFileManager;
+}
